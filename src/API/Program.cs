@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -187,22 +188,15 @@ public class Program
 
             app.UseMiddleware<ExceptionMiddleware>();
 
-            if (app.Environment.IsDevelopment())
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI(options =>
-                {
-                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Product Management API v1");
-                });
-            }
-            else
-            {
-                app.UseHsts();
-            }
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Product Management API v1");
+                options.RoutePrefix = "swagger";
+            });
 
-            app.UseHttpsRedirection();
+            app.UseDefaultFiles();
             app.UseStaticFiles();
-
             app.UseSerilogRequestLogging();
 
             app.UseCors("CorsPolicy");
@@ -217,21 +211,33 @@ public class Program
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
-                try
-                {
-                    var context = services.GetRequiredService<ApplicationDbContext>();
-                    var passwordHasher = services.GetRequiredService<IPasswordHasher>();
+                var maxRetries = 10;
+                var delay = TimeSpan.FromSeconds(3);
 
-                    if (context.Database.IsRelational())
-                    {
-                        await context.Database.MigrateAsync();
-                    }
-                    
-                    await DbContextSeed.SeedAsync(context, passwordHasher);
-                }
-                catch (Exception ex)
+                for (int retry = 1; retry <= maxRetries; retry++)
                 {
-                    Log.Error(ex, "An error occurred during database migration or seeding.");
+                    try
+                    {
+                        var context = services.GetRequiredService<ApplicationDbContext>();
+                        var passwordHasher = services.GetRequiredService<IPasswordHasher>();
+
+                        await context.Database.EnsureCreatedAsync();
+                        await EnsureTablesCreatedAsync(context);
+
+                        await DbContextSeed.SeedAsync(context, passwordHasher);
+                        Log.Information("Database initialization and seeding completed successfully.");
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, "Database connection/initialization attempt {Retry}/{MaxRetries} failed. Retrying in {DelaySeconds}s...", retry, maxRetries, delay.TotalSeconds);
+                        if (retry == maxRetries)
+                        {
+                            Log.Error(ex, "An error occurred during database migration or seeding after max retries.");
+                            throw;
+                        }
+                        await Task.Delay(delay);
+                    }
                 }
             }
 
@@ -245,6 +251,74 @@ public class Program
         {
             Log.CloseAndFlush();
         }
+    }
+
+    private static async Task EnsureTablesCreatedAsync(ApplicationDbContext context)
+    {
+        // 1. Users Table
+        await context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[Users]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [Users] (
+        [Id] int NOT NULL IDENTITY,
+        [Username] nvarchar(50) NOT NULL,
+        [PasswordHash] nvarchar(max) NOT NULL,
+        [Role] nvarchar(20) NOT NULL,
+        [CreatedBy] nvarchar(100) NOT NULL,
+        [CreatedOn] datetime2 NOT NULL,
+        [ModifiedBy] nvarchar(100) NULL,
+        [ModifiedOn] datetime2 NULL,
+        CONSTRAINT [PK_Users] PRIMARY KEY ([Id])
+    );
+    CREATE UNIQUE INDEX [IX_Users_Username] ON [Users] ([Username]);
+END;");
+
+        // 2. RefreshTokens Table
+        await context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[RefreshTokens]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [RefreshTokens] (
+        [Id] int NOT NULL IDENTITY,
+        [Token] nvarchar(200) NOT NULL,
+        [ExpiresOn] datetime2 NOT NULL,
+        [CreatedOn] datetime2 NOT NULL,
+        [RevokedOn] datetime2 NULL,
+        [UserId] int NOT NULL,
+        CONSTRAINT [PK_RefreshTokens] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_RefreshTokens_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE
+    );
+    CREATE UNIQUE INDEX [IX_RefreshTokens_Token] ON [RefreshTokens] ([Token]);
+END;");
+
+        // 3. Product Table
+        await context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[Product]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [Product] (
+        [Id] int NOT NULL IDENTITY,
+        [ProductName] nvarchar(255) NOT NULL,
+        [CreatedBy] nvarchar(100) NOT NULL,
+        [CreatedOn] datetime2 NOT NULL,
+        [ModifiedBy] nvarchar(100) NULL,
+        [ModifiedOn] datetime2 NULL,
+        CONSTRAINT [PK_Product] PRIMARY KEY ([Id])
+    );
+    CREATE INDEX [IX_Product_ProductName] ON [Product] ([ProductName]);
+END;");
+
+        // 4. Item Table
+        await context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[Item]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [Item] (
+        [Id] int NOT NULL IDENTITY,
+        [ProductId] int NOT NULL,
+        [Quantity] int NOT NULL,
+        CONSTRAINT [PK_Item] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_Item_Product_ProductId] FOREIGN KEY ([ProductId]) REFERENCES [Product] ([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_Item_ProductId] ON [Item] ([ProductId]);
+END;");
     }
 }
 

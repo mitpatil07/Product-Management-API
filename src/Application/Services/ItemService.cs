@@ -137,4 +137,3 @@ public class ItemQueryHandler :
         return Result<ItemDto>.Success(dto, "Item retrieved successfully.", 200);
     }
 }
-

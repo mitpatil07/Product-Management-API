@@ -11,103 +11,81 @@ using ProductManagement.Application.Common;
 using ProductManagement.Application.DTOs;
 using ProductManagement.Application.Features.Items;
 
-namespace ProductManagement.API.Controllers.v1
+namespace ProductManagement.API.Controllers.v1;
+
+public class ItemRequestModel
 {
-    /// <summary>
-    /// Request model for creating or updating items.
-    /// </summary>
-    public class ItemRequestModel
+    public int Quantity { get; set; }
+}
+
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/products/{productId:int}/items")]
+[Authorize]
+public class ItemsController : ApiControllerBase
+{
+    private readonly ISender _mediator;
+
+    public ItemsController(ISender mediator)
     {
-        public int Quantity { get; set; }
+        _mediator = mediator;
     }
 
-    /// <summary>
-    /// Controller managing Product Items (Version 1). Supports nested routing.
-    /// </summary>
-    [ApiVersion("1.0")]
-    [Route("api/v{version:apiVersion}/products/{productId:int}/items")]
-    [Authorize]
-    public class ItemsController : ApiControllerBase
+    [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<ItemDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Create(int productId, [FromBody] ItemRequestModel model, CancellationToken cancellationToken)
     {
-        private readonly ISender _mediator;
+        var command = new CreateItemCommand(productId, model.Quantity);
+        var result = await _mediator.Send(command, cancellationToken);
+        return HandleResult(result);
+    }
 
-        public ItemsController(ISender mediator)
-        {
-            _mediator = mediator;
-        }
+    [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<ItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetByProductId(int productId, CancellationToken cancellationToken)
+    {
+        var query = new GetItemsByProductIdQuery(productId);
+        var result = await _mediator.Send(query, cancellationToken);
+        return HandleResult(result);
+    }
 
-        /// <summary>
-        /// Adds a new Item to a Product.
-        /// </summary>
-        [HttpPost]
-        [ProducesResponseType(typeof(ApiResponse<ItemDto>), StatusCodes.Status201Created)]
-        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> Create(int productId, [FromBody] ItemRequestModel model, CancellationToken cancellationToken)
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(ApiResponse<ItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById(int productId, int id, CancellationToken cancellationToken)
+    {
+        var query = new GetItemByIdQuery(id);
+        var result = await _mediator.Send(query, cancellationToken);
+        
+        if (result.IsSuccess && result.Value != null && result.Value.ProductId != productId)
         {
-            var command = new CreateItemCommand(productId, model.Quantity);
-            var result = await _mediator.Send(command, cancellationToken);
-            return HandleResult(result);
+            return HandleResult(Result<ItemDto>.Failure($"Item with ID {id} does not belong to product {productId}.", 404));
         }
+        
+        return HandleResult(result);
+    }
 
-        /// <summary>
-        /// Retrieves all Items associated with a Product.
-        /// </summary>
-        [HttpGet]
-        [ProducesResponseType(typeof(ApiResponse<IEnumerable<ItemDto>>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetByProductId(int productId, CancellationToken cancellationToken)
-        {
-            var query = new GetItemsByProductIdQuery(productId);
-            var result = await _mediator.Send(query, cancellationToken);
-            return HandleResult(result);
-        }
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(ApiResponse<ItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Update(int productId, int id, [FromBody] ItemRequestModel model, CancellationToken cancellationToken)
+    {
+        var command = new UpdateItemCommand(id, productId, model.Quantity);
+        var result = await _mediator.Send(command, cancellationToken);
+        return HandleResult(result);
+    }
 
-        /// <summary>
-        /// Retrieves a specific Item of a Product by its ID.
-        /// </summary>
-        [HttpGet("{id:int}")]
-        [ProducesResponseType(typeof(ApiResponse<ItemDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetById(int productId, int id, CancellationToken cancellationToken)
-        {
-            var query = new GetItemByIdQuery(id);
-            var result = await _mediator.Send(query, cancellationToken);
-            
-            // Check if the item belongs to the requested product path
-            if (result.IsSuccess && result.Value != null && result.Value.ProductId != productId)
-            {
-                return HandleResult(Result<ItemDto>.Failure($"Item with ID {id} does not belong to product {productId}.", 404));
-            }
-            
-            return HandleResult(result);
-        }
-
-        /// <summary>
-        /// Updates the quantity of an Item associated with a Product.
-        /// </summary>
-        [HttpPut("{id:int}")]
-        [ProducesResponseType(typeof(ApiResponse<ItemDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> Update(int productId, int id, [FromBody] ItemRequestModel model, CancellationToken cancellationToken)
-        {
-            var command = new UpdateItemCommand(id, productId, model.Quantity);
-            var result = await _mediator.Send(command, cancellationToken);
-            return HandleResult(result);
-        }
-
-        /// <summary>
-        /// Deletes an Item from a Product.
-        /// </summary>
-        [HttpDelete("{id:int}")]
-        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(int productId, int id, CancellationToken cancellationToken)
-        {
-            var command = new DeleteItemCommand(id, productId);
-            var result = await _mediator.Send(command, cancellationToken);
-            return HandleResult(result);
-        }
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(int productId, int id, CancellationToken cancellationToken)
+    {
+        var command = new DeleteItemCommand(id, productId);
+        var result = await _mediator.Send(command, cancellationToken);
+        return HandleResult(result);
     }
 }
+

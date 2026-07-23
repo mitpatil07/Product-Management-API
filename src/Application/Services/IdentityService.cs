@@ -143,7 +143,6 @@ public class IdentityCommandHandler :
         var user = await _unitOfWork.Users.GetUserByRefreshTokenAsync(request.RefreshToken, cancellationToken);
         if (user == null)
         {
-            // Treat as idempotent if token is missing
             return Result.Success("User logged out successfully.", 200);
         }
 
@@ -157,4 +156,3 @@ public class IdentityCommandHandler :
         return Result.Success("User logged out successfully.", 200);
     }
 }
-

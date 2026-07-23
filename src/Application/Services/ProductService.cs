@@ -143,4 +143,3 @@ public class ProductQueryHandler :
         return Result<PagedList<ProductDto>>.Success(pagedList, "Products retrieved successfully.", 200);
     }
 }
-

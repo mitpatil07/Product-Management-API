@@ -4,7 +4,6 @@ using AutoMapper;
 using Moq;
 using ProductManagement.Application.DTOs;
 using ProductManagement.Application.Features.Products;
-using ProductManagement.Application.Interfaces;
 using ProductManagement.Application.Validators;
 using ProductManagement.Domain.Entities;
 using ProductManagement.Domain.Interfaces;
@@ -16,19 +15,16 @@ namespace ProductManagement.Application.Tests
     {
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<IMapper> _mockMapper;
-        private readonly Mock<ICurrentUserService> _mockCurrentUserService;
         private readonly ProductCommandHandler _handler;
 
         public ProductTests()
         {
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockMapper = new Mock<IMapper>();
-            _mockCurrentUserService = new Mock<ICurrentUserService>();
             
             _handler = new ProductCommandHandler(
                 _mockUnitOfWork.Object,
-                _mockMapper.Object,
-                _mockCurrentUserService.Object
+                _mockMapper.Object
             );
         }
 

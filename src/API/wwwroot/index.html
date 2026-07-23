@@ -3,35 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Core — Enterprise Management Portal</title>
+    <title>Product Core — Enterprise Portal</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-body: #090d16;
-            --bg-card: rgba(22, 30, 46, 0.75);
-            --bg-card-hover: rgba(30, 41, 59, 0.85);
-            --border-card: rgba(255, 255, 255, 0.08);
-            --border-focus: #6366f1;
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-subtle: #fff7ed;
             
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --primary-glow: rgba(99, 102, 241, 0.35);
-            --accent: #ec4899;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
+            --border-color: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --border-focus: #f97316;
             
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --text-dim: #64748b;
+            --primary: #ea580c;
+            --primary-hover: #c2410c;
+            --primary-light: #ffedd5;
+            --primary-text: #c2410c;
             
-            --radius-lg: 16px;
-            --radius-md: 10px;
+            --success: #16a34a;
+            --success-light: #dcfce7;
+            --danger: #dc2626;
+            --danger-light: #fee2e2;
+            
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-dim: #94a3b8;
+            
+            --radius-lg: 12px;
+            --radius-md: 8px;
             --radius-sm: 6px;
-            --shadow-glow: 0 10px 30px -10px rgba(99, 102, 241, 0.3);
+            
+            --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
         }
 
         * {
@@ -43,9 +50,6 @@
 
         body {
             background-color: var(--bg-body);
-            background-image: 
-                radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
-                radial-gradient(circle at 85% 85%, rgba(236, 72, 153, 0.08) 0%, transparent 40%);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
@@ -57,37 +61,39 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1.25rem 2rem;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border-card);
+            padding: 1rem 2rem;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: var(--shadow-sm);
         }
 
         .brand {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            font-size: 1.35rem;
+            font-size: 1.25rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #a855f7, #6366f1, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--text-main);
         }
 
         .brand-icon {
-            width: 38px;
-            height: 38px;
-            background: linear-gradient(135deg, #6366f1, #ec4899);
-            border-radius: 10px;
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: 800;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            font-size: 1.1rem;
+        }
+
+        .brand-accent {
+            color: var(--primary);
         }
 
         .user-nav {
@@ -97,7 +103,7 @@
         }
 
         .role-badge {
-            padding: 0.25rem 0.75rem;
+            padding: 0.3rem 0.75rem;
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 700;
@@ -106,63 +112,63 @@
         }
 
         .role-admin {
-            background: rgba(236, 72, 153, 0.15);
-            color: #f472b6;
-            border: 1px solid rgba(236, 72, 153, 0.3);
+            background: var(--primary-light);
+            color: var(--primary-text);
+            border: 1px solid #fed7aa;
         }
 
         .role-user {
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            background: var(--success-light);
+            color: #15803d;
+            border: 1px solid #bbf7d0;
         }
 
+        /* Buttons */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            padding: 0.65rem 1.25rem;
+            padding: 0.6rem 1.2rem;
             border-radius: var(--radius-md);
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border: none;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            border: 1px solid transparent;
             outline: none;
+            text-decoration: none;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            background: var(--primary);
             color: white;
-            box-shadow: var(--shadow-glow);
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px -5px rgba(99, 102, 241, 0.5);
+            background: var(--primary-hover);
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--bg-surface);
             color: var(--text-main);
-            border: 1px solid var(--border-card);
+            border-color: var(--border-color);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+            background: var(--bg-body);
+            border-color: var(--border-hover);
         }
 
         .btn-danger {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: var(--danger-light);
+            color: var(--danger);
+            border-color: #fca5a5;
         }
 
         .btn-danger:hover {
-            background: rgba(239, 68, 68, 0.25);
-            color: #fca5a5;
+            background: #fee2e2;
+            color: #b91c1c;
         }
 
         .btn-sm {
@@ -170,39 +176,41 @@
             font-size: 0.8rem;
         }
 
-        /* Container */
+        /* Main Container */
         .main-container {
-            max-width: 1240px;
+            max-width: 1200px;
             margin: 2rem auto;
             padding: 0 1.5rem;
             width: 100%;
             flex: 1;
         }
 
-        /* Auth Container */
+        /* Auth Screen */
         .auth-card {
-            max-width: 440px;
-            margin: 4rem auto;
-            background: var(--bg-card);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-card);
+            max-width: 420px;
+            margin: 3rem auto;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
             padding: 2.5rem;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
         }
 
         .auth-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 0.4rem;
         }
 
         .auth-sub {
             color: var(--text-muted);
-            text-align: center;
-            font-size: 0.9rem;
-            margin-bottom: 2rem;
+            font-size: 0.875rem;
         }
 
         .form-group {
@@ -213,25 +221,25 @@
             display: block;
             font-size: 0.85rem;
             font-weight: 600;
-            color: var(--text-muted);
+            color: var(--text-main);
             margin-bottom: 0.4rem;
         }
 
         .form-input, .form-select {
             width: 100%;
-            padding: 0.75rem 1rem;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--border-card);
+            padding: 0.65rem 0.9rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            color: white;
-            font-size: 0.95rem;
-            transition: border-color 0.2s;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            transition: border-color 0.15s ease;
         }
 
         .form-input:focus, .form-select:focus {
             border-color: var(--border-focus);
             outline: none;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
         }
 
         .auth-toggle {
@@ -251,56 +259,61 @@
         .quick-accounts {
             margin-top: 1.5rem;
             padding-top: 1.25rem;
-            border-top: 1px solid var(--border-card);
+            border-top: 1px solid var(--border-color);
             display: flex;
-            gap: 0.5rem;
             justify-content: center;
+            gap: 0.5rem;
         }
 
-        /* Dashboard Overview */
+        /* Metrics */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 1.25rem;
             margin-bottom: 2rem;
         }
 
         .metric-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
             padding: 1.5rem;
             display: flex;
             align-items: center;
             gap: 1.25rem;
-            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow-sm);
         }
 
         .metric-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            background: var(--primary-light);
+            color: var(--primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
+            font-weight: 700;
         }
 
         .metric-val {
-            font-size: 1.8rem;
+            font-size: 1.75rem;
             font-weight: 800;
+            color: var(--text-main);
             line-height: 1.1;
         }
 
         .metric-lbl {
             font-size: 0.85rem;
             color: var(--text-muted);
+            margin-top: 0.2rem;
         }
 
-        /* Controls bar */
+        /* Controls */
         .controls-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
             padding: 1.25rem;
             margin-bottom: 1.5rem;
@@ -309,6 +322,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 1rem;
+            box-shadow: var(--shadow-sm);
         }
 
         .search-box {
@@ -319,7 +333,7 @@
             min-width: 260px;
         }
 
-        /* Product Cards Grid */
+        /* Products Grid */
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -328,64 +342,60 @@
         }
 
         .product-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
             padding: 1.5rem;
-            transition: all 0.25s ease;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            position: relative;
-            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
 
         .product-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(99, 102, 241, 0.4);
-            box-shadow: 0 15px 35px -10px rgba(0,0,0,0.5);
-            background: var(--bg-card-hover);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
         }
 
         .product-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
         }
 
         .product-id {
             font-size: 0.75rem;
             font-weight: 700;
-            color: var(--primary);
-            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary-text);
+            background: var(--primary-light);
             padding: 0.2rem 0.5rem;
-            border-radius: 4px;
+            border-radius: var(--radius-sm);
         }
 
         .product-name {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: 700;
-            color: white;
-            margin-bottom: 0.5rem;
+            color: var(--text-main);
+            margin-bottom: 0.4rem;
         }
 
         .product-meta {
             font-size: 0.8rem;
-            color: var(--text-dim);
-            display: flex;
-            gap: 1rem;
+            color: var(--text-muted);
             margin-bottom: 1.25rem;
         }
 
         .items-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 0.3rem 0.75rem;
+            gap: 0.3rem;
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
+            padding: 0.25rem 0.6rem;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
             color: var(--text-muted);
         }
@@ -394,7 +404,7 @@
             display: flex;
             gap: 0.5rem;
             padding-top: 1rem;
-            border-top: 1px solid var(--border-card);
+            border-top: 1px solid var(--border-color);
         }
 
         /* Modal */
@@ -404,15 +414,14 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0,0,0,0.75);
-            backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1000;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.15s ease;
         }
 
         .modal-backdrop.active {
@@ -421,19 +430,13 @@
         }
 
         .modal {
-            background: #111827;
-            border: 1px solid var(--border-card);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
             width: 90%;
-            max-width: 520px;
+            max-width: 500px;
             padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            transform: scale(0.95);
-            transition: transform 0.2s ease;
-        }
-
-        .modal-backdrop.active .modal {
-            transform: scale(1);
+            box-shadow: var(--shadow-lg);
         }
 
         .modal-header {
@@ -444,8 +447,9 @@
         }
 
         .modal-title {
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             font-weight: 700;
+            color: var(--text-main);
         }
 
         .modal-close {
@@ -456,7 +460,6 @@
             cursor: pointer;
         }
 
-        /* Items List in Modal */
         .items-list {
             max-height: 240px;
             overflow-y: auto;
@@ -470,13 +473,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border-card);
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
             padding: 0.75rem 1rem;
             border-radius: var(--radius-md);
         }
 
-        /* Toast */
+        /* Toast Notifications */
         .toast-container {
             position: fixed;
             bottom: 2rem;
@@ -488,26 +491,20 @@
         }
 
         .toast {
-            padding: 0.9rem 1.4rem;
+            padding: 0.85rem 1.25rem;
             border-radius: var(--radius-md);
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             font-weight: 600;
             color: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-shadow: var(--shadow-lg);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            animation: slideIn 0.3s ease;
+            gap: 0.5rem;
         }
 
-        .toast-success { background: #059669; }
-        .toast-error { background: #dc2626; }
-        .toast-info { background: #2563eb; }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
+        .toast-success { background: var(--success); }
+        .toast-error { background: var(--danger); }
+        .toast-info { background: var(--primary); }
 
         /* Pagination */
         .pagination {
@@ -523,24 +520,26 @@
 </head>
 <body>
 
-    <!-- Top Navigation -->
+    <!-- Navigation Header -->
     <nav class="navbar">
         <div class="brand">
             <div class="brand-icon">P</div>
-            <span>ProductCore</span>
+            <span>Product<span class="brand-accent">Core</span></span>
         </div>
         <div class="user-nav" id="userNav">
-            <!-- Dynamically populated -->
+            <!-- Populated via JS -->
         </div>
     </nav>
 
-    <!-- Main App Container -->
+    <!-- App Main Container -->
     <div class="main-container">
 
-        <!-- AUTH VIEW (Login / Register) -->
+        <!-- AUTH FORM -->
         <div id="authView" class="auth-card hidden">
-            <h2 class="auth-title" id="authTitle">Welcome Back</h2>
-            <p class="auth-sub" id="authSub">Sign in to manage system products & inventory</p>
+            <div class="auth-header">
+                <h2 class="auth-title" id="authTitle">Sign In</h2>
+                <p class="auth-sub" id="authSub">Access product management portal</p>
+            </div>
 
             <form id="authForm">
                 <div class="form-group">
@@ -554,8 +553,8 @@
                 <div class="form-group hidden" id="roleGroup">
                     <label class="form-label">Role</label>
                     <select id="authRole" class="form-select">
-                        <option value="Admin">Admin (Full Access)</option>
-                        <option value="User">User (Standard Access)</option>
+                        <option value="Admin">Admin</option>
+                        <option value="User">User</option>
                     </select>
                 </div>
 
@@ -568,43 +567,42 @@
             </div>
 
             <div class="quick-accounts">
-                <button class="btn btn-secondary btn-sm" onclick="fillQuickAuth('admin', 'AdminPassword123!')">Fill Admin</button>
-                <button class="btn btn-secondary btn-sm" onclick="fillQuickAuth('user', 'UserPassword123!')">Fill User</button>
+                <button class="btn btn-secondary btn-sm" onclick="fillQuickAuth('admin', 'AdminPassword123!')">Fill Admin Credentials</button>
             </div>
         </div>
 
         <!-- DASHBOARD VIEW -->
         <div id="dashboardView" class="hidden">
             
-            <!-- Metrics Row -->
+            <!-- Metric Overview -->
             <div class="metrics-grid">
                 <div class="metric-card">
-                    <div class="metric-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">📦</div>
+                    <div class="metric-icon">📦</div>
                     <div>
                         <div class="metric-val" id="metricTotalProducts">0</div>
                         <div class="metric-lbl">Total Products</div>
                     </div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-icon" style="background: rgba(236, 72, 153, 0.15); color: #f472b6;">🔢</div>
+                    <div class="metric-icon">🔢</div>
                     <div>
                         <div class="metric-val" id="metricTotalItems">0</div>
-                        <div class="metric-lbl">Total Inventory Items</div>
+                        <div class="metric-lbl">Inventory Items</div>
                     </div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">⚡</div>
+                    <div class="metric-icon" style="background: var(--success-light); color: var(--success);">✓</div>
                     <div>
-                        <div class="metric-val" style="color: #34d399; font-size: 1.2rem;">Connected</div>
-                        <div class="metric-lbl">REST API Status</div>
+                        <div class="metric-val" style="color: var(--success); font-size: 1.15rem;">Operational</div>
+                        <div class="metric-lbl">REST API Connection</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Action & Search Bar -->
+            <!-- Search & Actions -->
             <div class="controls-card">
                 <div class="search-box">
-                    <input type="text" id="searchInput" class="form-input" placeholder="🔍 Search products by name..." oninput="debounceSearch()">
+                    <input type="text" id="searchInput" class="form-input" placeholder="Search products..." oninput="debounceSearch()">
                     <select id="sortSelect" class="form-select" style="max-width: 160px;" onchange="loadProducts()">
                         <option value="created_desc">Newest First</option>
                         <option value="name">Name (A-Z)</option>
@@ -614,15 +612,15 @@
                 <button class="btn btn-primary" onclick="openCreateProductModal()">+ Add New Product</button>
             </div>
 
-            <!-- Products List -->
+            <!-- Product Cards -->
             <div id="productsGrid" class="products-grid">
-                <!-- Dynamically rendered -->
+                <!-- Populated via JS -->
             </div>
 
             <!-- Pagination -->
             <div class="pagination" id="paginationControls">
                 <button class="btn btn-secondary btn-sm" id="prevPageBtn" onclick="changePage(-1)">← Previous</button>
-                <span id="pageInfoText" style="font-size: 0.9rem; color: var(--text-muted);">Page 1</span>
+                <span id="pageInfoText" style="font-size: 0.875rem; color: var(--text-muted);">Page 1</span>
                 <button class="btn btn-secondary btn-sm" id="nextPageBtn" onclick="changePage(1)">Next →</button>
             </div>
 
@@ -630,30 +628,30 @@
 
     </div>
 
-    <!-- CREATE / EDIT PRODUCT MODAL -->
+    <!-- PRODUCT MODAL -->
     <div class="modal-backdrop" id="productModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title" id="productModalTitle">Add New Product</h3>
+                <h3 class="modal-title" id="productModalTitle">Add Product</h3>
                 <button class="modal-close" onclick="closeModal('productModal')">&times;</button>
             </div>
             <form id="productForm" onsubmit="saveProduct(event)">
                 <input type="hidden" id="editProductId">
                 <div class="form-group">
                     <label class="form-label">Product Name</label>
-                    <input type="text" id="productNameInput" class="form-input" placeholder="e.g. Enterprise Laptop Pro" required>
+                    <input type="text" id="productNameInput" class="form-input" placeholder="e.g. Enterprise Server Rack" required>
                 </div>
                 <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('productModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Product</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MANAGE ITEMS MODAL -->
+    <!-- ITEMS MODAL -->
     <div class="modal-backdrop" id="itemsModal">
-        <div class="modal" style="max-width: 580px;">
+        <div class="modal" style="max-width: 540px;">
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title" id="itemsModalTitle">Product Items</h3>
@@ -662,24 +660,20 @@
                 <button class="modal-close" onclick="closeModal('itemsModal')">&times;</button>
             </div>
 
-            <!-- Add Item Form -->
             <form onsubmit="addItem(event)" style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem;">
                 <input type="hidden" id="activeProductId">
-                <input type="number" id="newItemQuantity" class="form-input" placeholder="Quantity (e.g. 50)" min="1" required>
+                <input type="number" id="newItemQuantity" class="form-input" placeholder="Quantity" min="1" required>
                 <button type="submit" class="btn btn-primary" style="white-space: nowrap;">+ Add Quantity</button>
             </form>
 
-            <div class="items-list" id="itemsList">
-                <!-- Dynamically populated items -->
-            </div>
+            <div class="items-list" id="itemsList"></div>
         </div>
     </div>
 
-    <!-- TOAST NOTIFICATION CONTAINER -->
+    <!-- TOASTS -->
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        // State
         const API_BASE = '/api/v1';
         let token = localStorage.getItem('jwt_token') || null;
         let currentUser = JSON.parse(localStorage.getItem('user_info') || 'null');
@@ -690,7 +684,6 @@
         let totalPages = 1;
         let searchTimeout = null;
 
-        // Init
         document.addEventListener('DOMContentLoaded', () => {
             if (token && currentUser) {
                 showDashboard();
@@ -699,21 +692,19 @@
             }
         });
 
-        // Toast Helper
         function showToast(msg, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
-            toast.innerHTML = `<span>${msg}</span>`;
+            toast.innerText = msg;
             container.appendChild(toast);
             setTimeout(() => toast.remove(), 3500);
         }
 
-        // Auth Logic
         function toggleAuthMode() {
             isRegistering = !isRegistering;
-            document.getElementById('authTitle').innerText = isRegistering ? 'Create Account' : 'Welcome Back';
-            document.getElementById('authSub').innerText = isRegistering ? 'Register a new user or admin account' : 'Sign in to manage system products & inventory';
+            document.getElementById('authTitle').innerText = isRegistering ? 'Create Account' : 'Sign In';
+            document.getElementById('authSub').innerText = isRegistering ? 'Register a new account' : 'Access product management portal';
             document.getElementById('roleGroup').classList.toggle('hidden', !isRegistering);
             document.getElementById('authSubmitBtn').innerText = isRegistering ? 'Register' : 'Sign In';
             document.getElementById('authToggleText').innerText = isRegistering ? 'Already have an account?' : "Don't have an account?";
@@ -762,7 +753,7 @@
             currentUser = null;
             localStorage.removeItem('jwt_token');
             localStorage.removeItem('user_info');
-            showToast('Logged out successfully', 'info');
+            showToast('Logged out', 'info');
             showAuth();
         }
 
@@ -779,7 +770,7 @@
             const roleClass = currentUser.role === 'Admin' ? 'role-admin' : 'role-user';
             document.getElementById('userNav').innerHTML = `
                 <span class="role-badge ${roleClass}">${currentUser.role}</span>
-                <span style="font-weight: 600; font-size: 0.9rem;">${currentUser.username}</span>
+                <span style="font-weight: 600; font-size: 0.875rem;">${currentUser.username}</span>
                 <a href="/swagger" target="_blank" class="btn btn-secondary btn-sm">Swagger ↗</a>
                 <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
             `;
@@ -787,7 +778,6 @@
             loadProducts();
         }
 
-        // Fetch API wrapper
         async function authFetch(url, options = {}) {
             options.headers = options.headers || {};
             options.headers['Authorization'] = `Bearer ${token}`;
@@ -801,7 +791,6 @@
             return await res.json();
         }
 
-        // Products Logic
         async function loadProducts() {
             const search = document.getElementById('searchInput').value.trim();
             const sort = document.getElementById('sortSelect').value;
@@ -844,7 +833,7 @@
                     <div class="product-card">
                         <div>
                             <div class="product-header">
-                                <span class="product-id">ID: #${p.id}</span>
+                                <span class="product-id">#${p.id}</span>
                                 <span class="items-badge">📦 ${itemCount} ${itemCount === 1 ? 'Item' : 'Items'}</span>
                             </div>
                             <h4 class="product-name">${escapeHtml(p.productName)}</h4>
@@ -854,7 +843,7 @@
                         </div>
 
                         <div class="product-actions">
-                            <button class="btn btn-secondary btn-sm" onclick="openItemsModal(${p.id}, '${escapeHtml(p.productName)}')">Manage Items</button>
+                            <button class="btn btn-secondary btn-sm" onclick="openItemsModal(${p.id}, '${escapeHtml(p.productName)}')">Items</button>
                             <button class="btn btn-secondary btn-sm" onclick="openEditProductModal(${p.id}, '${escapeHtml(p.productName)}')">Edit</button>
                             ${isAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">Delete</button>` : ''}
                         </div>
@@ -876,7 +865,6 @@
             loadProducts();
         }
 
-        // Modal Helpers
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
         }
@@ -915,7 +903,7 @@
                 }
 
                 if (res.success) {
-                    showToast(res.message || 'Product saved successfully', 'success');
+                    showToast(res.message || 'Product saved', 'success');
                     closeModal('productModal');
                     loadProducts();
                 } else {
@@ -932,7 +920,7 @@
             try {
                 const res = await authFetch(`${API_BASE}/products/${id}`, { method: 'DELETE' });
                 if (res.success) {
-                    showToast('Product deleted successfully', 'success');
+                    showToast('Product deleted', 'success');
                     loadProducts();
                 } else {
                     showToast(res.message || 'Failed to delete product', 'error');
@@ -942,7 +930,6 @@
             }
         }
 
-        // Child Items Logic
         async function openItemsModal(productId, productName) {
             document.getElementById('activeProductId').value = productId;
             document.getElementById('itemsModalTitle').innerText = productName;
@@ -968,14 +955,14 @@
         function renderItems(items) {
             const list = document.getElementById('itemsList');
             if (!items || items.length === 0) {
-                list.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No inventory items attached yet.</div>`;
+                list.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No items attached.</div>`;
                 return;
             }
 
             list.innerHTML = items.map(item => `
                 <div class="item-row">
                     <div>
-                        <span style="font-weight: 700; font-size: 0.95rem;">Item ID: #${item.id}</span>
+                        <span style="font-weight: 700; font-size: 0.9rem;">Item #${item.id}</span>
                         <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 0.75rem;">Quantity: <strong>${item.quantity}</strong></span>
                     </div>
                     <button class="btn btn-danger btn-sm" onclick="deleteItem(${item.id})">Remove</button>
@@ -995,7 +982,7 @@
                 });
 
                 if (res.success) {
-                    showToast('Item added successfully', 'success');
+                    showToast('Item added', 'success');
                     document.getElementById('newItemQuantity').value = '';
                     loadItems(productId);
                     loadProducts();

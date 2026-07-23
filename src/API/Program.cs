@@ -26,265 +26,225 @@ using ProductManagement.Application.Mappings;
 using ProductManagement.Application.Validators;
 using ProductManagement.Domain.Interfaces;
 using ProductManagement.Infrastructure.Persistence;
-using ProductManagement.Infrastructure.Persistence.Repositories;
 using ProductManagement.Infrastructure.Security;
 using Serilog;
 
-namespace ProductManagement.API
+namespace ProductManagement.API;
+
+public class Program
 {
-    public class Program
+    public static async Task Main(string[] args)
     {
-        public static async Task Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(builder.Configuration)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+            .CreateLogger();
+
+        builder.Host.UseSerilog();
+
+        try
         {
-            var builder = WebApplication.CreateBuilder(args);
+            Log.Information("Starting Web API host...");
 
-            // ==================================================
-            // 1. SERILOG STRUCTURED LOGGING CONFIGURATION
-            // ==================================================
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(builder.Configuration)
-                .Enrich.FromLogContext()
-                .WriteTo.Console()
-                .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
-                .CreateLogger();
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(connectionString));
 
-            builder.Host.UseSerilog();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
+            builder.Services.AddScoped<ITokenService, TokenService>();
 
-            try
+            builder.Services.AddMediatR(cfg =>
+                cfg.RegisterServicesFromAssembly(typeof(Result).Assembly));
+
+            builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
+
+            builder.Services.AddValidatorsFromAssembly(typeof(CreateProductCommandValidator).Assembly);
+
+            builder.Services.AddControllers(options =>
             {
-                Log.Information("Starting Web API host...");
+                options.Filters.Add<ValidationFilter>();
+            }).AddNewtonsoftJson();
 
-                // ==================================================
-                // 2. DATABASE CONFIGURATION
-                // ==================================================
-                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-                builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlServer(connectionString));
+            // Suppress default validation filter so our custom ValidationFilter intercepts
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.SuppressModelStateInvalidFilter = true;
+            });
 
-                // ==================================================
-                // 3. CORE SERVICES REGISTER (DEPENDENCY INJECTION)
-                // ==================================================
-                builder.Services.AddHttpContextAccessor();
-                builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-                builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-                builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
-                builder.Services.AddScoped<ITokenService, TokenService>();
+            var jwtSettings = new JwtSettings();
+            builder.Configuration.GetSection(JwtSettings.SectionName).Bind(jwtSettings);
+            builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 
-                // Register MediatR
-                builder.Services.AddMediatR(cfg =>
-                    cfg.RegisterServicesFromAssembly(typeof(Result).Assembly));
-
-                // Register AutoMapper
-                builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
-
-                // Register FluentValidation Validators
-                builder.Services.AddValidatorsFromAssembly(typeof(CreateProductCommandValidator).Assembly);
-
-                // ==================================================
-                // 4. API CONTROLLERS AND VALIDATION FILTER
-                // ==================================================
-                builder.Services.AddControllers(options =>
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false;
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    options.Filters.Add<ValidationFilter>(); // Apply global validation action filter
-                }).AddNewtonsoftJson();
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidAudience = jwtSettings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
 
-                // Suppress default validation filter so our custom ValidationFilter intercepts
-                builder.Services.Configure<ApiBehaviorOptions>(options =>
+            builder.Services.AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ReportApiVersions = true;
+            })
+            .AddApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'VVV";
+                options.SubstituteApiVersionInUrl = true;
+            });
+
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    options.SuppressModelStateInvalidFilter = true;
+                    Title = "Product Management API",
+                    Version = "v1",
+                    Description = "RESTful API for Product & Item management."
                 });
 
-                // ==================================================
-                // 5. JWT BEARER AUTHENTICATION
-                // ==================================================
-                var jwtSettings = new JwtSettings();
-                builder.Configuration.GetSection(JwtSettings.SectionName).Bind(jwtSettings);
-                builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
-
-                builder.Services.AddAuthentication(options =>
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                })
-                .AddJwtBearer(options =>
-                {
-                    options.RequireHttpsMetadata = false; // Set to true in Production
-                    options.SaveToken = true;
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = jwtSettings.Issuer,
-                        ValidAudience = jwtSettings.Audience,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
-                        ClockSkew = TimeSpan.Zero // Remove standard 5 minutes clock skew delay
-                    };
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Input your JWT token in the format: Bearer {your_token}"
                 });
 
-                // ==================================================
-                // 6. API VERSIONING
-                // ==================================================
-                builder.Services.AddApiVersioning(options =>
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
-                    options.DefaultApiVersion = new ApiVersion(1, 0);
-                    options.AssumeDefaultVersionWhenUnspecified = true;
-                    options.ReportApiVersions = true;
-                })
-                .AddApiExplorer(options =>
-                {
-                    options.GroupNameFormat = "'v'VVV";
-                    options.SubstituteApiVersionInUrl = true;
-                });
-
-                // ==================================================
-                // 7. SWAGGER GENERATION WITH JWT SECURITY DEFINITIONS
-                // ==================================================
-                builder.Services.AddEndpointsApiExplorer();
-                builder.Services.AddSwaggerGen(options =>
-                {
-                    options.SwaggerDoc("v1", new OpenApiInfo
                     {
-                        Title = "Product Management API",
-                        Version = "v1",
-                        Description = "Enterprise-grade RESTful API for Product & Item management."
-                    });
-
-                    // Add JWT Bearer Security Definition
-                    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                    {
-                        Name = "Authorization",
-                        Type = SecuritySchemeType.ApiKey,
-                        Scheme = "Bearer",
-                        BearerFormat = "JWT",
-                        In = ParameterLocation.Header,
-                        Description = "Input your JWT token in the format: Bearer {your_token}"
-                    });
-
-                    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-                    {
+                        new OpenApiSecurityScheme
                         {
-                            new OpenApiSecurityScheme
+                            Reference = new OpenApiReference
                             {
-                                Reference = new OpenApiReference
-                                {
-                                    Type = ReferenceType.SecurityScheme,
-                                    Id = "Bearer"
-                                }
-                            },
-                            Array.Empty<string>()
-                        }
-                    });
-
-                    // Enable XML comments documentation
-                    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                    if (File.Exists(xmlPath))
-                    {
-                        options.IncludeXmlComments(xmlPath);
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
                     }
                 });
 
-                // ==================================================
-                // 8. SECURITY & UTILITIES (RATE LIMITING, HEALTH CHECKS, CORS)
-                // ==================================================
-                builder.Services.AddCors(options =>
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
                 {
-                    options.AddPolicy("CorsPolicy", policy =>
-                    {
-                        policy.AllowAnyOrigin()
-                              .AllowAnyHeader()
-                              .AllowAnyMethod();
-                    });
-                });
-
-                // Native Fixed Window Rate Limiting (100 requests per 60s per client)
-                builder.Services.AddRateLimiter(options =>
-                {
-                    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-                    options.AddFixedWindowLimiter("fixed", opt =>
-                    {
-                        opt.Window = TimeSpan.FromSeconds(60);
-                        opt.PermitLimit = 100;
-                        opt.QueueLimit = 2;
-                        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                    });
-                });
-
-                builder.Services.AddHealthChecks();
-
-                // Build application
-                var app = builder.Build();
-
-                // ==================================================
-                // 9. CONFIGURE REQUEST PIPELINE (MIDDLEWARES)
-                // ==================================================
-                app.UseMiddleware<ExceptionMiddleware>(); // Custom exception handling middleware
-
-                if (app.Environment.IsDevelopment())
-                {
-                    app.UseSwagger();
-                    app.UseSwaggerUI(options =>
-                    {
-                        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Product Management API v1");
-                    });
+                    options.IncludeXmlComments(xmlPath);
                 }
-                else
-                {
-                    app.UseHsts();
-                }
+            });
 
-                app.UseHttpsRedirection();
-                app.UseStaticFiles();
-
-                app.UseSerilogRequestLogging(); // serilog request tracking middleware
-
-                app.UseCors("CorsPolicy");
-                app.UseRateLimiter();
-
-                app.UseAuthentication();
-                app.UseAuthorization();
-
-                app.MapHealthChecks("/health");
-                app.MapControllers();
-
-                // ==================================================
-                // 10. AUTO RUN MIGRATIONS & SEED DATA
-                // ==================================================
-                using (var scope = app.Services.CreateScope())
-                {
-                    var services = scope.ServiceProvider;
-                    try
-                    {
-                        var context = services.GetRequiredService<ApplicationDbContext>();
-                        var passwordHasher = services.GetRequiredService<IPasswordHasher>();
-
-                        // Apply pending migrations automatically on startup
-                        if (context.Database.IsRelational())
-                        {
-                            await context.Database.MigrateAsync();
-                        }
-                        
-                        // Seed database demo records
-                        await DbContextSeed.SeedAsync(context, passwordHasher);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "An error occurred during database migration or seeding.");
-                    }
-                }
-
-                await app.RunAsync();
-            }
-            catch (Exception ex)
+            builder.Services.AddCors(options =>
             {
-                Log.Fatal(ex, "Host terminated unexpectedly!");
-            }
-            finally
+                options.AddPolicy("CorsPolicy", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
+            builder.Services.AddRateLimiter(options =>
             {
-                Log.CloseAndFlush();
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.AddFixedWindowLimiter("fixed", opt =>
+                {
+                    opt.Window = TimeSpan.FromSeconds(60);
+                    opt.PermitLimit = 100;
+                    opt.QueueLimit = 2;
+                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                });
+            });
+
+            builder.Services.AddHealthChecks();
+
+            var app = builder.Build();
+
+            app.UseMiddleware<ExceptionMiddleware>();
+
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Product Management API v1");
+                });
             }
+            else
+            {
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+
+            app.UseSerilogRequestLogging();
+
+            app.UseCors("CorsPolicy");
+            app.UseRateLimiter();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.MapHealthChecks("/health");
+            app.MapControllers();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var context = services.GetRequiredService<ApplicationDbContext>();
+                    var passwordHasher = services.GetRequiredService<IPasswordHasher>();
+
+                    if (context.Database.IsRelational())
+                    {
+                        await context.Database.MigrateAsync();
+                    }
+                    
+                    await DbContextSeed.SeedAsync(context, passwordHasher);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "An error occurred during database migration or seeding.");
+                }
+            }
+
+            await app.RunAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Host terminated unexpectedly!");
+        }
+        finally
+        {
+            Log.CloseAndFlush();
         }
     }
 }
+
